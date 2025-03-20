@@ -45,4 +45,15 @@
         android:layout_toLeftOf="@id/send"
         android:text="Close" />
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvMessages"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/open"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+
+
+        />
+
 </RelativeLayout>

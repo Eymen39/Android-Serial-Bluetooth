@@ -20,11 +20,18 @@ import android.widget.EditText;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
@@ -40,7 +47,9 @@ public class MainActivity extends Activity
     Thread workerThread;
     byte[] readBuffer;
     int readBufferPosition;
-    int counter;
+    RecyclerView recyclerView;
+    RecyclerViewAdapter nachrichtenAdapter;
+    ArrayList<Message> nachrichten=new ArrayList<>();
     volatile boolean stopWorker;
 
     @Override
@@ -54,6 +63,12 @@ public class MainActivity extends Activity
         Button closeButton = (Button)findViewById(R.id.close);
         myLabel = (TextView)findViewById(R.id.label);
         myTextbox = (EditText)findViewById(R.id.entry);
+        recyclerView=(RecyclerView)findViewById(R.id.rvMessages);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        nachrichtenAdapter= new RecyclerViewAdapter(nachrichten);
+        recyclerView.setAdapter(nachrichtenAdapter);
+
+
 
         //Open Button
         openButton.setOnClickListener(new View.OnClickListener()
@@ -187,13 +202,12 @@ public class MainActivity extends Activity
                                     System.arraycopy(readBuffer, 0, encodedBytes, 0, encodedBytes.length);
                                     final String data = new String(encodedBytes, "US-ASCII");
                                     readBufferPosition = 0;
-
-                                    handler.post(new Runnable()
+                                    String timestamp= new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+                                    Message nachricht= new Message(data,timestamp,false);
+                                    Log.i("Data",nachricht.getZeitstempel()+nachricht.getMsg());
+                                    handler.post(()->
                                     {
-                                        public void run()
-                                        {
-                                            myLabel.setText(data);
-                                        }
+                                        nachrichtenAdapter.addNachricht(nachricht);
                                     });
                                 }
                                 else
@@ -219,7 +233,9 @@ public class MainActivity extends Activity
         String msg = myTextbox.getText().toString();
         msg += "\n";
         mmOutputStream.write(msg.getBytes());
-        myLabel.setText("Data Sent");
+        String zeitstempel= new SimpleDateFormat("HH:mm:ss",Locale.getDefault()).format(new Date());
+        Message nachricht = new Message(msg,zeitstempel,true);
+        nachrichtenAdapter.addNachricht(nachricht);
     }
 
     void closeBT() throws IOException
