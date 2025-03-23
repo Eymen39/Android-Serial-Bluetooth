@@ -14,16 +14,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
-import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.EditText;
 import android.widget.Button;
 import android.widget.Toast;
 
+import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.android.material.snackbar.Snackbar;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +48,10 @@ public class MainActivity extends Activity
     RecyclerView recyclerView;
     RecyclerViewAdapter nachrichtenAdapter;
     ArrayList<Message> nachrichten=new ArrayList<>();
+    ArrayList<BluetoothDevices> devicesEasy = new ArrayList<>();
+    Set<BluetoothDevice>devices;
     volatile boolean stopWorker;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -108,9 +109,8 @@ public class MainActivity extends Activity
     }
 
     @SuppressLint("MissingPermission")
-    void findBT(String deviceName)
+   private ArrayList<BluetoothDevices> findBT(String deviceName)
     {
-        boolean deviceFound=false;
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         if(mBluetoothAdapter == null)
         {
@@ -130,37 +130,28 @@ public class MainActivity extends Activity
             }
         }
 
-        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-        if(pairedDevices.size() > 0)
-        {
-            for(BluetoothDevice device : pairedDevices)
-            {
-                if(device.getName().equals(deviceName))
-                {
-                    mmDevice = device;
-                    deviceFound=true;
-                    break;
-                }
-                else{
-                    Log.e("MyTag","Cant Find Device");
-                }
-            }
-            if( deviceFound){
-                myLabel.setText("Bluetooth Device Found");
-                try {
-                    openBT();
-                } catch (IOException e) {
-                    myLabel.setText("Cant Connect to the Device");
-                }
+        devices = mBluetoothAdapter.getBondedDevices();
+        ArrayList<BluetoothDevices> devicesNames= new ArrayList<>();
 
-            }
+
+
+        if(devices.size() > 0) {
+
+            for (BluetoothDevice device : devices){
+                BluetoothDevices devicetoAdd= new BluetoothDevices();
+                devicetoAdd.setName(device.getName());
+                devicesNames.add(devicetoAdd);
+
+            };
 
         }
+        return devicesNames;
     }
 
     @SuppressLint("MissingPermission")
-    void openBT() throws IOException
+    void openBT(BluetoothDevice device) throws IOException
     {
+        mmDevice=device;
         UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); //Standard SerialPortService ID
         mmSocket = mmDevice.createRfcommSocketToServiceRecord(uuid);
         mmSocket.connect();
@@ -251,6 +242,12 @@ public class MainActivity extends Activity
         AlertDialog.Builder blPopUpBuilder= new AlertDialog.Builder(this);
         EditText etDeviceName = new EditText(this);
         blPopUpBuilder.setView(etDeviceName);
+        RecyclerView rvBlDevices= new RecyclerView(this);
+        rvBlDevices.setLayoutManager(new LinearLayoutManager(this));
+        DevicesRVAdapter devicesRVAdapter=new DevicesRVAdapter(devicesEasy,clickListener());
+        rvBlDevices.setAdapter(devicesRVAdapter);
+        blPopUpBuilder.setView(rvBlDevices);
+        devicesEasy = findBT("");
         blPopUpBuilder.setPositiveButton("Connect", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -274,5 +271,49 @@ public class MainActivity extends Activity
 
 
     }
+    private BluetoothDevice findDevice(String name){
+        for (BluetoothDevice device : devices){
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return null;
+            }
+            if(device.getName().equals(name)){
+                return device;
+            }
+
+        };
+        return null;
+    }
+    private DevicesRVAdapter.onItemClickListner clickListener(){
+          DevicesRVAdapter.onItemClickListner listener= new DevicesRVAdapter.onItemClickListner() {
+              @Override
+              public void onItemClick(String deviceName) {
+                  try {
+                      BluetoothDevice a = findDevice(deviceName);
+                      if( a== null){
+                          Toast.makeText(MainActivity.this, "diesesElemente existiert nicht", Toast.LENGTH_SHORT).show();
+                      }else{
+                          openBT(a);
+
+                      }
+                  } catch (IOException e) {
+                      Toast.makeText(MainActivity.this,"Etwas ist Schiefgelaufen bei der Verbindung zum gerät",Toast.LENGTH_LONG).show();
+                  }
+              }
+
+
+          };
+
+
+
+        return listener;
+    }
+
 
 }
