@@ -59,15 +59,17 @@ public class MainActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button openButton = (Button)findViewById(R.id.open);
-        Button sendButton = (Button)findViewById(R.id.send);
-        Button closeButton = (Button)findViewById(R.id.close);
-        myLabel = (TextView)findViewById(R.id.label);
-        myTextbox = (EditText)findViewById(R.id.entry);
-        recyclerView=(RecyclerView)findViewById(R.id.rvMessages);
+        Button openButton = findViewById(R.id.open);
+        Button sendButton = findViewById(R.id.send);
+        Button closeButton = findViewById(R.id.close);
+        myLabel = findViewById(R.id.label);
+        myTextbox = findViewById(R.id.entry);
+        recyclerView=findViewById(R.id.rvMessages);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         nachrichtenAdapter= new RecyclerViewAdapter(nachrichten);
         recyclerView.setAdapter(nachrichtenAdapter);
+        Intent intent= new Intent(this,BluetoothMenuActivity.class);
+
 
 
 
@@ -76,7 +78,8 @@ public class MainActivity extends Activity
         {
             public void onClick(View v) {
 
-                BLpopUp();
+              //  BLpopUp();
+                startActivity(intent);
 
             }
         });
@@ -131,11 +134,12 @@ public class MainActivity extends Activity
         }
 
         devices = mBluetoothAdapter.getBondedDevices();
+        mBluetoothAdapter.startDiscovery();
         ArrayList<BluetoothDevices> devicesNames= new ArrayList<>();
 
 
 
-        if(devices.size() > 0) {
+        if(!devices.isEmpty()) {
 
             for (BluetoothDevice device : devices){
                 BluetoothDevices devicetoAdd= new BluetoothDevices();
@@ -238,7 +242,7 @@ public class MainActivity extends Activity
         myLabel.setText("Bluetooth Closed");
     }
 
-    private void BLpopUp() {
+    /*private void BLpopUp() {
         AlertDialog.Builder blPopUpBuilder= new AlertDialog.Builder(this);
         EditText etDeviceName = new EditText(this);
         blPopUpBuilder.setView(etDeviceName);
@@ -270,7 +274,7 @@ public class MainActivity extends Activity
 
 
 
-    }
+    }*/
     private BluetoothDevice findDevice(String name){
         for (BluetoothDevice device : devices){
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
